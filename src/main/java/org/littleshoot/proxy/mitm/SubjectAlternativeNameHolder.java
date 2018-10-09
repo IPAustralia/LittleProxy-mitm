@@ -3,6 +3,7 @@ package org.littleshoot.proxy.mitm;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -41,21 +42,21 @@ public class SubjectAlternativeNameHolder {
     public void addAll(Collection<List<?>> subjectAlternativeNames) {
         if (subjectAlternativeNames != null) {
             for (List<?> each : subjectAlternativeNames) {
-                sans.add(parseGeneralName(each));
+                parseGeneralName(each).ifPresent(san -> sans.add(san));
             }
         }
     }
 
-    private ASN1Encodable parseGeneralName(List<?> nameEntry) {
+    private Optional<? extends ASN1Encodable> parseGeneralName(List<?> nameEntry) {
         if (nameEntry == null || nameEntry.size() != 2) {
             throw new IllegalArgumentException(nameEntry != null ? String.valueOf(nameEntry) : "nameEntry is null");
         }
         String tag = String.valueOf(nameEntry.get(0));
         Matcher m = TAGS_PATTERN.matcher(tag);
         if (m.matches()) {
-            return new GeneralName(Integer.valueOf(tag),
-                    String.valueOf(nameEntry.get(1)));
+            return Optional.of(new GeneralName(Integer.valueOf(tag),
+                    String.valueOf(nameEntry.get(1))));
         }
-        throw new IllegalArgumentException(String.valueOf(nameEntry));
+        return Optional.empty();
     }
 }
